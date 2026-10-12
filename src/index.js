@@ -24,17 +24,12 @@ function printBanner() {
   const shadow = "\x1b[90m";
   console.log("");
   console.log(cyan + "███████╗███████╗ █████╗ ███╗   ██╗" + reset);
-  console.log(cyan + "╚══███╔╝██╔════╝██╔══██╗████╗  ██║" + reset);
-  console.log(cyan + "  ███╔╝ █████╗  ███████║██╔██╗ ██║" + reset);
-  console.log(cyan + " ███╔╝  ██╔══╝  ██╔══██║██║╚██╗██║" + reset);
+  console.log(cyan + "╚══███╔╝╚══███╔╝██╔══██╗████╗  ██║" + reset);
+  console.log(cyan + "  ███╔╝   ███╔╝ ███████║██╔██╗ ██║" + reset);
+  console.log(cyan + " ███╔╝   ███╔╝  ██╔══██║██║╚██╗██║" + reset);
   console.log(cyan + "███████╗███████╗██║  ██║██║ ╚████║" + reset);
   console.log(cyan + "╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝" + reset);
-  console.log(blue + "████████╗███████╗██╗  ██╗████████╗" + reset);
-  console.log(blue + "╚══██╔══╝██╔════╝╚██╗██╔╝╚══██╔══╝" + reset);
-  console.log(blue + "   ██║   █████╗   ╚███╔╝    ██║   " + reset);
-  console.log(blue + "   ██║   ██╔══╝   ██╔██╗    ██║   " + reset);
-  console.log(blue + "   ██║   ███████╗██╔╝ ██╗   ██║   " + reset);
-  console.log(blue + "   ╚═╝   ╚══════╝╚═╝  ╚═╝   ╚═╝   " + reset);
+  console.log(blue + "              Z E A N" + reset);
   console.log(shadow + "          ▄▄▄  ▄▄▄ ▄▄▄  ▄▄▄" + reset);
   console.log("");
   console.log(cyan + "Thank you for using our baileys, we hope you like it. :>" + reset);
@@ -126,11 +121,18 @@ async function startSocket() {
         err: lastDisconnect?.error
       }, "Koneksi WhatsApp terputus");
 
-      if (activeSocket === sock) activeSocket = null;
+      // Abaikan event dari socket lama agar tidak membuat koneksi ganda.
+      if (activeSocket !== sock) {
+        logger.warn("Event close dari socket lama diabaikan.");
+        return;
+      }
+      activeSocket = null;
       if (loggedOut) {
         logger.error("Perlu pairing ulang. Bot tidak akan menghapus sesi secara otomatis.");
         return;
       }
+      // Restart-required dan putus biasa sama-sama dipulihkan dengan socket baru,
+      // menggunakan sesi yang sama dan backoff untuk mencegah restart loop.
       scheduleReconnect(statusCode ?? "unknown");
     }
 
