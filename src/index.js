@@ -1,11 +1,30 @@
 const fs = require("node:fs");
 const path = require("node:path");
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason,
-  fetchLatestBaileysVersion
-} = require("@whiskeysockets/baileys");
+// Elaina Baileys 1.4.x is ESM-first; dynamic import keeps the existing CommonJS
+// project structure while loading its exports correctly on Node.js 20+.
+let makeWASocket;
+let useMultiFileAuthState;
+let DisconnectReason;
+let fetchLatestBaileysVersion;
+let baileysImportPromise;
+
+async function loadBaileys() {
+  if (!baileysImportPromise) {
+    baileysImportPromise = import("@rexxhayanasi/elaina-baileys").then((library) => {
+      makeWASocket = library.default || library.makeWASocket;
+      useMultiFileAuthState = library.useMultiFileAuthState;
+      DisconnectReason = library.DisconnectReason;
+      fetchLatestBaileysVersion = library.fetchLatestBaileysVersion;
+      if (typeof makeWASocket !== "function" ||
+          typeof useMultiFileAuthState !== "function" ||
+          !DisconnectReason) {
+        throw new Error("Elaina Baileys exports tidak sesuai dengan API yang diharapkan.");
+      }
+      return library;
+    });
+  }
+  return baileysImportPromise;
+}
 const config = require("./config");
 const logger = require("./logger");
 const { handleMessage } = require("./commands");
@@ -70,6 +89,7 @@ function scheduleReconnect(reason) {
 
 async function startSocket() {
   if (isShuttingDown) return;
+  await loadBaileys();
   const authDir = path.join(process.cwd(), "auth_info");
   fs.mkdirSync(authDir, { recursive: true });
   const { state, saveCreds } = await useMultiFileAuthState(authDir);
@@ -141,7 +161,14 @@ async function startSocket() {
     ) {
       pairingRequested = true;
       try {
-        const code = await sock.requestPairingCode(config.pairingNumber);
+        if (config.pairingCode && !/^[A-Z0-9]{8}$/.test(config.pairingCode)) {
+          pairingRequested = false;
+          logger.error("PAIRING_CODE harus tepat 8 karakter alfanumerik (A-Z, 0-9), atau kosongkan agar WhatsApp membuat kode.");
+          return;
+        }
+        const code = config.pairingCode
+          ? await sock.requestPairingCode(config.pairingNumber, config.pairingCode)
+          : await sock.requestPairingCode(config.pairingNumber);
         console.log("");
         console.log("\x1b[1m\x1b[36mPAIRING CODE\x1b[0m");
         console.log("\x1b[1m\x1b[33m  " + code + "  \x1b[0m");
