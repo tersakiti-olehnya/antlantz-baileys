@@ -56,7 +56,6 @@ async function sendInteractiveMenu(sock, chat, message, logger) {
       .setBody("Pilih command di bawah. Tombol interaktif memerlukan klien WhatsApp yang mendukung formatnya.")
       .setFooter("ZEAN • ANTLANTZ Baileys")
       .addReply("Ping", ".ping")
-      .addReply("Menu", ".menu")
       .addCopy("Salin nama bot", config.botName)
       .addUrl("Buka GitHub", "https://github.com/tersakiti-olehnya/antlantz-baileys");
 
