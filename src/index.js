@@ -54,10 +54,10 @@ function printBanner() {
 
 function errorAdvice(code, error) {
   const message = String(error?.message || error || "");
-  if (code === DisconnectReason.loggedOut || code === 401 || /logged.?out|unauthorized/i.test(message)) {
+  if ((DisconnectReason && code === DisconnectReason.loggedOut) || code === 401 || /logged.?out|unauthorized/i.test(message)) {
     return "SESSION LOGGED OUT: pairing ulang diperlukan. Jangan hapus auth_info otomatis.";
   }
-  if (code === DisconnectReason.restartRequired || code === 515) {
+  if ((DisconnectReason && code === DisconnectReason.restartRequired) || code === 515) {
     return "RESTART REQUIRED: membuat koneksi baru dengan sesi yang sama.";
   }
   if (code === 408 || code === 428 || code === 503 || /timed? out|timeout|connection closed|socket/i.test(message)) {
